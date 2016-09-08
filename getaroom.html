@@ -1,0 +1,198 @@
+<html>
+  <head>
+    <script type="text/javascript">
+      // Your Client ID can be retrieved from your project in the Google
+      // Developer Console, https://console.developers.google.com
+
+      // This is based on code found in https://developers.google.com/google-apps/calendar/quickstart/js
+
+      var CLIENT_ID = '<google client id here>';
+
+      var SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+
+      /**
+       * Check if current user has authorized this application.
+       */
+      function checkAuth() {
+        gapi.auth.authorize(
+          {
+            'client_id': CLIENT_ID,
+            'scope': SCOPES.join(' '),
+            'immediate': true
+          }, handleAuthResult);
+      }
+
+      /**
+       * Handle response from authorization server.
+       *
+       * @param {Object} authResult Authorization result.
+       */
+      function handleAuthResult(authResult) {
+        var authorizeDiv = document.getElementById('authorize-div');
+        if (authResult && !authResult.error) {
+          // Hide auth UI, then load client library.
+          authorizeDiv.style.display = 'none';
+          loadCalendarApi();
+        } else {
+          // Show auth UI, allowing the user to initiate authorization by
+          // clicking authorize button.
+          authorizeDiv.style.display = 'inline';
+        }
+      }
+
+      /**
+       * Initiate auth flow in response to user clicking authorize button.
+       *
+       * @param {Event} event Button click event.
+       */
+      function handleAuthClick(event) {
+        gapi.auth.authorize(
+          {client_id: CLIENT_ID, scope: SCOPES, immediate: false},
+          handleAuthResult);
+        return false;
+      }
+
+      /**
+       * Load Google Calendar client library. List upcoming events
+       * once client library is loaded.
+       */
+      function loadCalendarApi() {
+        gapi.client.load('calendar', 'v3', listUpcomingEvents);
+      }
+
+      /**
+       * Print the summary and start datetime/date of the next ten events in
+       * the authorized user's calendar. If no events are found an
+       * appropriate message is printed.
+       */
+      function listUpcomingEvents() {
+        var reqDetails = {
+          'calendarId': '',
+          'timeMin': (new Date()).toISOString(),
+          'showDeleted': false,
+          'singleEvents': true,
+          'maxResults': 1,
+          'orderBy': 'startTime'
+        }
+
+        // Kiosk
+        reqDetails.calendarId = 'redhat.com_3839333536373238383530@resource.calendar.google.com';
+        var request = gapi.client.calendar.events.list(reqDetails);
+        doRequest(request);
+
+        // Reg
+        reqDetails.calendarId = 'redhat.com_3531323537362d383937@resource.calendar.google.com';
+        request = gapi.client.calendar.events.list(reqDetails);
+        doRequest(request);
+
+        // Tower
+        reqDetails.calendarId = 
+          'redhat.com_35383931393239312d373730@resource.calendar.google.com';
+        request = gapi.client.calendar.events.list(reqDetails);
+        doRequest(request);
+
+        // Suir
+        reqDetails.calendarId = 'redhat.com_3535343938363431363036@resource.calendar.google.com';
+        request = gapi.client.calendar.events.list(reqDetails);
+        doRequest(request);
+      }
+
+
+      function doRequest(request) {
+        request.execute(function(resp) {
+          var events = resp.items;
+          console.log(events);
+
+          if (events.length > 0) {
+            for (i = 0; i < events.length; i++) {
+              var event = events[i];
+
+              var currTime = ISODateString(new Date());
+              console.log('current time is ' + currTime);
+              console.log('start time is ' + event.start.dateTime);
+              console.log('end time is ' + event.end.dateTime);
+
+              var midnight = new Date();
+              midnight.setDate(midnight.getDate() + 2)
+
+              //Convert to midnight in your timezone first
+              midnight.setHours(0,0,0,0);
+
+              //Convert to midnight UTC
+              midnight.setUTCHours(0,0,0,0);
+              console.log('midnight is ' + ISODateString(midnight));
+
+              if ((event.start.dateTime <= currTime) && (event.end.dateTime >= currTime)) {
+                appendPre(event.location + '  -  ' + 'Occupied\n')
+              } else {
+                if (event.start.dateTime > ISODateString(midnight)) {
+                  appendPre(resp.summary + '  -  ' + 'Free for the rest of the day\n');
+                } else {
+                appendPre(resp.summary + '  -  ' + 'Available until ' + event.start.dateTime + '\n')
+                }
+              }
+
+            }
+          } else {
+            appendPre('No upcoming events found.');
+          }
+
+        })
+      };
+
+      function ISODateString(d){
+       function pad(n){return n<10 ? '0'+n : n}
+       return d.getUTCFullYear()+'-'
+            + pad(d.getUTCMonth()+1)+'-'
+            + pad(d.getUTCDate())+'T'
+            + pad(d.getUTCHours() + 1)+':'
+            + pad(d.getUTCMinutes())+':'
+            + pad(d.getUTCSeconds())+'+01:00'
+          }
+
+        function minutesBetween(date1, date2) {
+          //Get 1 minute in milliseconds
+          var one_minute=1000*60;
+
+          // Convert both dates to milliseconds
+          var date1_ms = Date.parse(date1).getTime();
+          var date2_ms = Date.parse(date2).getTime();
+
+          // Calculate the difference in milliseconds
+          var difference_ms = date2_ms - date1_ms;
+            
+          // Convert back to minutes and return
+          return Math.round(difference_ms/one_minute); 
+        }
+
+
+
+      /**
+       * Append a pre element to the body containing the given message
+       * as its text node.
+       *
+       * @param {string} message Text to be placed in pre element.
+       */
+      function appendPre(message) {
+        var pre = document.getElementById('output');
+        var textContent = document.createTextNode(message + '\n');
+        pre.appendChild(textContent);
+      }
+
+    </script>
+
+    <!-- This is where gapi comes from -->
+    <script src="https://apis.google.com/js/client.js?onload=checkAuth">
+    </script>
+  </head>
+  <body>
+    <div id="authorize-div" style="display: none">
+      <span>Authorize access to Google Calendar API</span>
+      <!--Button for the user to click to initiate auth sequence -->
+      <button id="authorize-button" onclick="handleAuthClick(event)">
+        Authorize
+      </button>
+    </div>
+    <pre id="output"></pre>
+  </body>
+</html>
