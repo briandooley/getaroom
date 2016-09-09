@@ -1,12 +1,14 @@
 <html>
   <head>
+    <link rel="shortcut icon" type="image/x-icon" href="calendar_tab_icon.png" />`
     <script type="text/javascript">
       // Your Client ID can be retrieved from your project in the Google
       // Developer Console, https://console.developers.google.com
 
       // This is based on code found in https://developers.google.com/google-apps/calendar/quickstart/js
 
-      var CLIENT_ID = '<google client id here>';
+      // The client id is unique to your google account.  You can obtain an id at https://developers.google.com/google-apps/calendar/quickstart/js#step_1_turn_on_the_api_name
+      var CLIENT_ID = '<google id>';
 
       var SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
 
@@ -123,12 +125,16 @@
               console.log('midnight is ' + ISODateString(midnight));
 
               if ((event.start.dateTime <= currTime) && (event.end.dateTime >= currTime)) {
-                appendPre(event.location + '  -  ' + 'Occupied\n')
+                var diff = Math.ceil((Math.abs(new Date() - Date.parse(event.end.dateTime)))/60000);
+                  appendPre(event.location + '  -  ' + 'Occupied\n')
+//                appendPre(event.location + '  -  ' + 'Occupied for the next ' + diff + ' minutes\n')
               } else {
                 if (event.start.dateTime > ISODateString(midnight)) {
                   appendPre(resp.summary + '  -  ' + 'Free for the rest of the day\n');
                 } else {
-                appendPre(resp.summary + '  -  ' + 'Available until ' + event.start.dateTime + '\n')
+//                appendPre(resp.summary + '  -  ' + 'free until ' + event.start.dateTime + '\n')
+                var diff = Math.ceil((Math.abs(new Date() - Date.parse(event.start.dateTime)))/60000);
+                appendPre(resp.summary + '  -  ' + 'Free for the next ' + diff + ' minutes\n')
                 }
               }
 
@@ -150,23 +156,6 @@
             + pad(d.getUTCSeconds())+'+01:00'
           }
 
-        function minutesBetween(date1, date2) {
-          //Get 1 minute in milliseconds
-          var one_minute=1000*60;
-
-          // Convert both dates to milliseconds
-          var date1_ms = Date.parse(date1).getTime();
-          var date2_ms = Date.parse(date2).getTime();
-
-          // Calculate the difference in milliseconds
-          var difference_ms = date2_ms - date1_ms;
-            
-          // Convert back to minutes and return
-          return Math.round(difference_ms/one_minute); 
-        }
-
-
-
       /**
        * Append a pre element to the body containing the given message
        * as its text node.
@@ -185,7 +174,7 @@
     <script src="https://apis.google.com/js/client.js?onload=checkAuth">
     </script>
   </head>
-  <body>
+  <body style="background-color:black;font-weight:bold">
     <div id="authorize-div" style="display: none">
       <span>Authorize access to Google Calendar API</span>
       <!--Button for the user to click to initiate auth sequence -->
@@ -193,6 +182,8 @@
         Authorize
       </button>
     </div>
-    <pre id="output"></pre>
+    <b>
+    <pre id="output" style="color:DarkTurquoise;font-size:200%;"></pre>
+    </b>
   </body>
 </html>
